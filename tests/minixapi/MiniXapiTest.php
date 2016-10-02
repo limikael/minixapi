@@ -135,7 +135,7 @@ __END__;
 
 		$res=$this->miniXapi->processRequest("GET","statements",
 			array(
-				"agent"=>"mailto:david@example.com",
+				"agent"=>json_encode(array("mbox"=>"mailto:david@example.com")),
 				"verb"=>"http://adlnet.gov/expapi/verbs/completed",
 				"activity"=>"http://example.com/activities/touch-typing"
 			)
@@ -144,12 +144,55 @@ __END__;
 
 		$res=$this->miniXapi->processRequest("GET","statements",
 			array(
-				"agent"=>"mailto:eric@example.com",
+				"agent"=>json_encode(array("mbox"=>"mailto:eric@example.com")),
 				"verb"=>"http://adlnet.gov/expapi/verbs/completed",
 				"activity"=>"http://example.com/activities/touch-typing"
 			)
 		);
 		$this->assertCount(0,$res["statements"]);
+	}
+
+	/**
+	 * @expectedException Exception
+	 */
+	function testMboxFail() {
+		$this->miniXapi->install();
+
+		$statement=array(
+			"actor"=>array("mbox"=>"mailto:eric@example.com"),
+			"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+			"object"=>array("id"=>"http://example.com/activities/touch-typing")
+		);
+
+		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+
+		// The agent needs to be a json object!
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"agent"=>"mailto:eric@example.com",
+			)
+		);
+	}
+
+	function testMbox() {
+		$this->miniXapi->install();
+
+		$statement=array(
+			"actor"=>array("mbox"=>"mailto:eric@example.com"),
+			"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+			"object"=>array("id"=>"http://example.com/activities/touch-typing")
+		);
+
+		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+
+		// The agent needs to be a json object!
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"agent"=>json_encode(array("mbox"=>"mailto:eric@example.com")),
+			)
+		);
+
+		$this->assertCount(1,$res["statements"]);
 	}
 
 	function testContext() {

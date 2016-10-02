@@ -197,6 +197,18 @@ class MiniXapi {
 			if (!in_array($k,$understood))
 				throw new Exception("Query parameter $k not understood at the moment.");
 
+		if (isset($query["agent"])) {
+			$decoded=json_decode($query["agent"],TRUE);
+			if (!$decoded)
+				throw new Exception("Unable to decode json for agent: ".$query["agent"]);
+
+			if (!$decoded["mbox"])
+				throw new Exception("Expected agent to have mbox");
+
+			$query["agent"]=$decoded["mbox"];
+		}
+
+
 		$tables=array();
 		$wheres=array();
 		$params=array();
