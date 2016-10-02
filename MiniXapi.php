@@ -13,6 +13,7 @@ class MiniXapi {
 	private $pdo;
 	private $dsn;
 	private $tablePrefix;
+	private $basicAuth;
 
 	/**
 	 * Constructor.
@@ -22,17 +23,77 @@ class MiniXapi {
 	}
 
 	/**
+	 * Are we installed?
+	 */
+	public function isInstalled() {
+		$pdo=$this->getPdo();
+
+		$t=gettype($pdo->exec("SELECT COUNT(*) FROM {$this->tablePrefix}statements"));
+		if ($t!="integer")
+			return FALSE;
+
+		$t=gettype($pdo->exec("SELECT COUNT(*) FROM {$this->tablePrefix}statements_index"));
+		if ($t!="integer")
+			return FALSE;
+
+		return TRUE;
+	}
+
+	/**
+	 * Set a table prefix.
+	 */
+	public function setTablePrefix($tablePrefix) {
+		$this->tablePrefix=$tablePrefix;
+	}
+
+	/**
+	 * Set username and password to use for basic auth.
+	 */
+	public function setBasicAuth($userColonPass) {
+		$this->basicAuth=$userColonPass;
+	}
+
+	/**
 	 * Serve the request.
 	 */
 	public function serve() {
-		$components=RewriteUtil::getPathComponents();
+		$auth=$_SERVER["PHP_AUTH_USER"].":".$_SERVER["PHP_AUTH_PW"];
 
-		switch ($components[0]) {
-			case "statements":
-				break;
+		if ($this->basicAuth && $auth!=$this->basicAuth) {
+		    header('WWW-Authenticate: Basic realm="MiniXapi"');
+		    header('HTTP/1.0 401 Unauthorized');
+			$res=array(
+				"error"=>TRUE,
+				"message"=>"Unauthorized"
+			);
+			echo json_encode($res,JSON_PRETTY_PRINT);
+		    exit;
 		}
 
-		print_r($components);
+		$components=RewriteUtil::getPathComponents();
+
+		try {
+			$res=$this->processRequest(
+				$_SERVER['REQUEST_METHOD'],
+				$components[0],
+				$_REQUEST,
+				file_get_contents('php://input')
+			);
+		}
+
+		catch (Exception $e) {
+			http_response_code(500);
+			header('Content-Type: application/json');
+			$res=array(
+				"error"=>TRUE,
+				"message"=>$e->getMessage()
+			);
+			echo json_encode($res,JSON_PRETTY_PRINT);
+			return;
+		}
+
+		header('Content-Type: application/json');
+		echo json_encode($res,JSON_PRETTY_PRINT);
 	}
 
 	/**
