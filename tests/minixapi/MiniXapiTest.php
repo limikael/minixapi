@@ -79,23 +79,120 @@ __END__;
 	function testGetWithVerb() {
 		$this->miniXapi->install();
 
-		$statement=array(
-			"actor"=>array("mbox"=>"mailto:sally@example.com"),
-			"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
-			"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+		$statements=array(
+			array(
+				"actor"=>array("mbox"=>"mailto:sally@example.com"),
+				"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+				"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+			),
+			array(
+				"actor"=>array("mbox"=>"mailto:alice@example.com"),
+				"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/completed"),
+				"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+			),
+			array(
+				"actor"=>array("mbox"=>"mailto:bob@example.com"),
+				"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+				"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+			),
+			array(
+				"actor"=>array("mbox"=>"mailto:cesar@example.com"),
+				"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+				"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+			),
+			array(
+				"actor"=>array("mbox"=>"mailto:david@example.com"),
+				"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/completed"),
+				"object"=>array("id"=>"http://example.com/activities/touch-typing")
+			),
+			array(
+				"actor"=>array("mbox"=>"mailto:eric@example.com"),
+				"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+				"object"=>array("id"=>"http://example.com/activities/touch-typing")
+			),
 		);
 
-		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
-		$statement["actor"]["mbox"]="mainto:alice@example.com";
-		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
-		$statement["actor"]["mbox"]="mainto:bob@example.com";
-		$statement["verb"]["id"]="http://adlnet.gov/expapi/verbs/completed";
-		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+		foreach ($statements as $statement)
+			$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
 
-		/*$res=$this->miniXapi->processRequest("GET","statements",
+		$res=$this->miniXapi->processRequest("GET","statements",
 			array("verb"=>"http://adlnet.gov/expapi/verbs/experienced")
 		);
+		$this->assertCount(4,$res["statements"]);
 
-		$this->assertCount(2,$res["statements"]);*/
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array("activity"=>"http://example.com/activities/solo-hang-gliding")
+		);
+		$this->assertCount(4,$res["statements"]);
+
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"verb"=>"http://adlnet.gov/expapi/verbs/experienced",
+				"activity"=>"http://example.com/activities/touch-typing"
+			)
+		);
+		$this->assertCount(1,$res["statements"]);
+
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"agent"=>"mailto:david@example.com",
+				"verb"=>"http://adlnet.gov/expapi/verbs/completed",
+				"activity"=>"http://example.com/activities/touch-typing"
+			)
+		);
+		$this->assertCount(1,$res["statements"]);
+
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"agent"=>"mailto:eric@example.com",
+				"verb"=>"http://adlnet.gov/expapi/verbs/completed",
+				"activity"=>"http://example.com/activities/touch-typing"
+			)
+		);
+		$this->assertCount(0,$res["statements"]);
+	}
+
+	function testContext() {
+		$this->miniXapi->install();
+		$statement=array(
+			"actor"=>array("mbox"=>"mailto:alice@example.com"),
+			"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/completed"),
+			"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding"),
+			"context"=>array(
+				"contextActivities"=>array(
+					"category"=>array(
+						array(
+							"objectType"=>"Activity",
+							"id"=>"http://swag.tunapanda.org/"
+						)
+					)
+				)
+			)
+		);
+
+		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"activity"=>"http://swag.tunapanda.org/"
+			)
+		);
+		$this->assertCount(0,$res["statements"]);
+
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"activity"=>"http://swag.tunapanda.org/",
+				"related_activities"=>TRUE
+			)
+		);
+		$this->assertCount(1,$res["statements"]);
+
+		$res=$this->miniXapi->processRequest("GET","statements",
+			array(
+				"activity"=>"http://example.com/activities/solo-hang-gliding",
+				"related_activities"=>TRUE
+			)
+		);
+		$this->assertCount(1,$res["statements"]);
 	}
 }

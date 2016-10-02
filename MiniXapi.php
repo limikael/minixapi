@@ -48,15 +48,15 @@ class MiniXapi {
 		$pdo=$this->getPdo();
 		$q=$pdo->prepare(
 			"INSERT INTO {$this->tablePrefix}statements ".
-			"       (id, statement) ".
-			"VALUES (:id, :statement) "
+			"       (statementId, statement) ".
+			"VALUES (:statementId, :statement) "
 		);
 
 		if (!$q)
 			throw new DatabaseException($pdo->errorInfo());
 
 		$r=$q->execute(array(
-			"id"=>$statement->getId(),
+			"statementId"=>$statement->getId(),
 			"statement"=>$statementEncoded
 		));
 
@@ -79,10 +79,33 @@ class MiniXapi {
 			"value"=>$statement->getTarget()->getId()
 		);
 
+		$indices[]=array(
+			"type"=>"relatedActivity",
+			"value"=>$statement->getTarget()->getId()
+		);
+
+		$context=$statement->getContext();
+		if ($context) {
+			$contextActivities=$context->getContextActivities();
+			$relatedActivities=array_merge(
+				$contextActivities->getCategory(),
+				$contextActivities->getGrouping(),
+				$contextActivities->getParent(),
+				$contextActivities->getOther()
+			);
+
+			foreach ($relatedActivities as $relatedActivity) {
+				$indices[]=array(
+					"type"=>"relatedActivity",
+					"value"=>$relatedActivity->getId()
+				);
+			}
+		}
+
 		$q=$pdo->prepare(
 			"INSERT INTO {$this->tablePrefix}statements_index ".
-			"       (type, value, statement_id) ".
-			"VALUES (:type, :value, :statement_id)"
+			"       (type, value, statementId) ".
+			"VALUES (:type, :value, :statementId)"
 		);
 
 		if (!$q)
@@ -90,7 +113,7 @@ class MiniXapi {
 
 		foreach ($indices as $index) {
 			//print_r($index);
-			$index["statement_id"]=$statement->getId();
+			$index["statementId"]=$statement->getId();
 			$r=$q->execute($index);
 			if (!$r)
 				throw new DatabaseException($q->errorInfo());
@@ -105,58 +128,68 @@ class MiniXapi {
 	public function processGetStatements($query) {
 		$pdo=$this->getPdo();
 
-		/*$tables=array();
+		$understood=array(
+			"agent","verb","activity","statementId","related_activities"
+		);
+
+		foreach ($query as $k=>$v)
+			if (!in_array($k,$understood))
+				throw new Exception("Query parameter $k not understood at the moment.");
+
+		$tables=array();
 		$wheres=array();
 		$params=array();
 		$tableCount=0;
 
-		if (isset($query["agent"])) {
-			$tables[]="{$this->tablePrefix}statements_index as t_$tableCount"
-			$wheres[]="t_$tableCount.statement_id=?"
+		$queryables=array(
+			"agent"=>"agent",
+			"verb"=>"verb",
+			"activity"=>"activity",
+		);
 
-			$tableCount++;
+		if (isset($query["related_activities"]) && $query["related_activities"])
+			$queryables["activity"]="relatedActivity";
+
+		foreach ($queryables as $queryable=>$type) {
+			if (isset($query[$queryable])) {
+				$tables[]="{$this->tablePrefix}statements_index";
+				$wheres[]="t_$tableCount.type=?";
+				$params[]=$type;
+				$wheres[]="t_$tableCount.value=?";
+				$params[]=$query[$queryable];
+				$tableCount++;
+			}
 		}
 
-		$tables[]="{$this->tablePrefix}statements as t_$tableCount";
-
+		$tables[]="{$this->tablePrefix}statements";
 		if (isset($query["statementId"])) {
-			$wheres[]="t_$tableCount.statement_id=?";
+			$wheres[]="t_$tableCount.statementId=?";
 			$params[]=$query["statementId"];
-		}*/
-
-
-		if (isset($query["statementId"])) {
-			$q=$pdo->prepare(
-				"SELECT * ".
-				"FROM   {$this->tablePrefix}statements ".
-				"WHERE  id=:statementId"
-			);
-
-			if (!$q)
-				throw new DatabaseException($pdo->errorInfo());
-
-			$r=$q->execute(array(
-				"statementId"=>$query["statementId"]
-			));
-
-			if (!$r)
-				throw new DatabaseException($q->errorInfo());
 		}
 
-		else {
-			$q=$pdo->prepare(
-				"SELECT * ".
-				"FROM   {$this->tablePrefix}statements "
-			);
+		$prev=$tableCount;
+		$tableCount++;
 
-			if (!$q)
-				throw new DatabaseException($pdo->errorInfo());
+		$qs="SELECT DISTINCT t_$prev.statement FROM $tables[0] AS t_0 ";
 
-			$r=$q->execute();
-
-			if (!$r)
-				throw new DatabaseException($q->errorInfo());
+		for ($i=1; $i<$tableCount; $i++) {
+			$prev=$i-1;
+			$qs.="JOIN $tables[$i] AS t_$i ON t_$prev.statementId=t_$i.statementId ";
 		}
+
+		if ($wheres)
+			$qs.="WHERE ";
+
+		$qs.=join(" AND ",$wheres);
+		//echo $qs."\n"; print_r($params);
+
+		$q=$pdo->prepare($qs);
+		if (!$q)
+			throw new DatabaseException($pdo->errorInfo());
+
+		$r=$q->execute($params);
+		if (!$r)
+			throw new DatabaseException($q->errorInfo());
 
 		$res=array();
 		foreach ($q as $row) {
@@ -215,7 +248,7 @@ class MiniXapi {
 
 		$r=$pdo->query(
 			"CREATE TABLE {$this->tablePrefix}statements ( ".
-			"  id VARCHAR(255) NOT NULL PRIMARY KEY, ".
+			"  statementId VARCHAR(255) NOT NULL PRIMARY KEY, ".
 			"  statement TEXT ".
 			")"
 		);
@@ -227,8 +260,8 @@ class MiniXapi {
 			"CREATE TABLE {$this->tablePrefix}statements_index ( ".
 			"  type VARCHAR(20) NOT NULL, ".
 			"  value TEXT NOT NULL, ".
-			"  statement_id VARCHAR(255) NOT NULL, ".
-			"  PRIMARY KEY (type, value, statement_id) ".
+			"  statementId VARCHAR(255) NOT NULL, ".
+			"  PRIMARY KEY (type, value, statementId) ".
 			")"
 		);
 
