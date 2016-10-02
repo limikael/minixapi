@@ -9,6 +9,9 @@ class MiniXapiTest extends PHPUnit_Framework_TestCase {
 		if (file_exists(__DIR__."/../data/minixapitest.sqlite"))
 			unlink(__DIR__."/../data/minixapitest.sqlite");
 
+		if (file_exists(__DIR__."/../data/minixapitest.sqlite"))
+			throw new Exception("can't delete file");
+
 		if (!is_dir(__DIR__."/../data"))
 			mkdir(__DIR__."/../data");
 
@@ -71,5 +74,28 @@ __END__;
 
 		$res=$this->miniXapi->processRequest("GET","statements",array("statementId"=>$id));
 		$this->assertEquals($res["actor"]["name"],"Sally Glider");
+	}
+
+	function testGetWithVerb() {
+		$this->miniXapi->install();
+
+		$statement=array(
+			"actor"=>array("mbox"=>"mailto:sally@example.com"),
+			"verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+			"object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+		);
+
+		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+		$statement["actor"]["mbox"]="mainto:alice@example.com";
+		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+		$statement["actor"]["mbox"]="mainto:bob@example.com";
+		$statement["verb"]["id"]="http://adlnet.gov/expapi/verbs/completed";
+		$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+
+		/*$res=$this->miniXapi->processRequest("GET","statements",
+			array("verb"=>"http://adlnet.gov/expapi/verbs/experienced")
+		);
+
+		$this->assertCount(2,$res["statements"]);*/
 	}
 }

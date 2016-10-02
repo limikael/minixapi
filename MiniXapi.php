@@ -42,6 +42,9 @@ class MiniXapi {
 		$statement=TinCan\Statement::fromJSON($body);
 		StatementUtil::formalize($statement);
 
+		$statementObject=$statement->asVersion(TinCan\Version::latest());
+		$statementEncoded=json_encode($statementObject,JSON_PRETTY_PRINT);
+
 		$pdo=$this->getPdo();
 		$q=$pdo->prepare(
 			"INSERT INTO {$this->tablePrefix}statements ".
@@ -52,16 +55,46 @@ class MiniXapi {
 		if (!$q)
 			throw new DatabaseException($pdo->errorInfo());
 
-		$statementObject=$statement->asVersion(TinCan\Version::latest());
-		$statementEncoded=json_encode($statementObject,JSON_PRETTY_PRINT);
-
 		$r=$q->execute(array(
 			"id"=>$statement->getId(),
 			"statement"=>$statementEncoded
 		));
 
 		if (!$r)
-			throw new DatabaseException($r->errorInfo());
+			throw new DatabaseException($q->errorInfo());
+
+		$indices=array();
+		$indices[]=array(
+			"type"=>"verb",
+			"value"=>$statement->getVerb()->getId()
+		);
+
+		$indices[]=array(
+			"type"=>"agent",
+			"value"=>$statement->getActor()->getMbox()
+		);
+
+		$indices[]=array(
+			"type"=>"activity",
+			"value"=>$statement->getTarget()->getId()
+		);
+
+		$q=$pdo->prepare(
+			"INSERT INTO {$this->tablePrefix}statements_index ".
+			"       (type, value, statement_id) ".
+			"VALUES (:type, :value, :statement_id)"
+		);
+
+		if (!$q)
+			throw new DatabaseException($pdo->errorInfo());
+
+		foreach ($indices as $index) {
+			//print_r($index);
+			$index["statement_id"]=$statement->getId();
+			$r=$q->execute($index);
+			if (!$r)
+				throw new DatabaseException($q->errorInfo());
+		}
 
 		return array($statement->getId());
 	}
@@ -71,6 +104,26 @@ class MiniXapi {
 	 */
 	public function processGetStatements($query) {
 		$pdo=$this->getPdo();
+
+		/*$tables=array();
+		$wheres=array();
+		$params=array();
+		$tableCount=0;
+
+		if (isset($query["agent"])) {
+			$tables[]="{$this->tablePrefix}statements_index as t_$tableCount"
+			$wheres[]="t_$tableCount.statement_id=?"
+
+			$tableCount++;
+		}
+
+		$tables[]="{$this->tablePrefix}statements as t_$tableCount";
+
+		if (isset($query["statementId"])) {
+			$wheres[]="t_$tableCount.statement_id=?";
+			$params[]=$query["statementId"];
+		}*/
+
 
 		if (isset($query["statementId"])) {
 			$q=$pdo->prepare(
@@ -164,6 +217,18 @@ class MiniXapi {
 			"CREATE TABLE {$this->tablePrefix}statements ( ".
 			"  id VARCHAR(255) NOT NULL PRIMARY KEY, ".
 			"  statement TEXT ".
+			")"
+		);
+
+		if (!$r)
+			throw new DatabaseException($pdo->errorInfo());
+
+		$r=$pdo->query(
+			"CREATE TABLE {$this->tablePrefix}statements_index ( ".
+			"  type VARCHAR(20) NOT NULL, ".
+			"  value TEXT NOT NULL, ".
+			"  statement_id VARCHAR(255) NOT NULL, ".
+			"  PRIMARY KEY (type, value, statement_id) ".
 			")"
 		);
 
