@@ -35,7 +35,7 @@ This shows how to use MiniXapi in the standard way as a REST endpoint. Create an
 
 This is the basic idea. There are some more things we can do, such as setting up authentication. See the reference for details.
 
-## Usage as a REST endpoint
+## Usage as a library
 
 In order to embed MiniXapi in another web application, it is possible to use it as a library. There are two functions exposed for this purpose, `getStatements` and `putStatement`. The setup, e.g. specifying the database connection, is done in the same way as when we use it as a RESTful endpoint.
 
