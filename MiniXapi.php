@@ -54,7 +54,7 @@ class MiniXapi {
 	}
 
 	/**
-	 * Serve the request.
+	 * Serve a request.
 	 */
 	public function serve() {
 		$auth=$_SERVER["PHP_AUTH_USER"].":".$_SERVER["PHP_AUTH_PW"];
@@ -191,9 +191,13 @@ class MiniXapi {
 	}
 
 	/**
-	 * Get statements
+	 * Get statements.
+	 * If the query has statementId in it, the single matching
+	 * statement will be returned. For other queries, an array of
+	 * matching statements will be returned. This is similar
+	 * to the xAPI standard.
 	 */
-	public function processGetStatements($query) {
+	public function getStatements($query=array()) {
 		$pdo=$this->getPdo();
 
 		$understood=array(
@@ -292,7 +296,7 @@ class MiniXapi {
 			return $this->processPostStatements($body);
 
 		if ($method=="GET" && $url=="statements")
-			return $this->processGetStatements($query);
+			return $this->getStatements($query);
 
 		else throw new Exception("Unknown method: $method $url");
 	}
