@@ -12,7 +12,7 @@ MiniXapi is an xAPI learning record store. It is common for xAPI record stores t
 
 ## Usage as a REST endpoint
 
-This shows how to use MiniXapi in the standard way as a REST endpoint. Create an `index.php` file somewhere, together with a `.htaccess` file that makes the `index.php` file catch all requests. You don't need to put MiniXapi inside this directory, put it somewhere where it can be included into the php file. Then put the following code in the `index.php` file:
+This example shows how to use MiniXapi in the standard way as a RESTful endpoint. Create an `index.php` file somewhere, together with a `.htaccess` file that makes the `index.php` file catch all requests. You don't need to put MiniXapi inside this directory, put it somewhere where it can be included into the php file. Then put the following code in the `index.php` file:
 
 ```php
 <?php
@@ -37,7 +37,7 @@ This is the basic idea. There are some more things we can do, such as setting up
 
 ## Usage as a library
 
-In order to embed MiniXapi in another web application, it is possible to use it as a library. There are two functions exposed for this purpose, `getStatements` and `putStatement`. The setup, e.g. specifying the database connection, is done in the same way as when we use it as a RESTful endpoint.
+In order to embed MiniXapi into a web application, it is possible to use it as a library. There are two functions exposed for this purpose, `getStatements` and `putStatement`. The setup, e.g. specifying the database connection, is done in the same way as when MiniXapi is used as a RESTful endpoint.
 
 The function `putStatement` is used to put a statement into the learning record store. The statement is represented by a PHP array. Even though the statement is an array, rather than JSON as is used by the xAPI standard, all fields used in the standard can be used in the array. 
 
@@ -62,9 +62,9 @@ The function `putStatement` is used to put a statement into the learning record 
     $statementId=$miniXapi->putStatement($statement);
 ```
 
-The function `getStatements` is used to search for and retreive statements from the record store. This function accepts an array as input, and returns an array of matching statements. The fields of the array corresponds to the fields used when getting statements from an xAPI record store, see the [xAPI standard documentation](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Communication.md#213-get-statements) for details.
+The function `getStatements` is used to search for and retreive statements from the learning record store. This function accepts an array as input, and returns an array of matching statements. The fields of the array corresponds to the fields used when getting statements from an xAPI record store, see the [xAPI standard documentation](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Communication.md#213-get-statements) for details.
 
-Note, at the time of writing this functionality is very incomplete, and only the fields `agent`, `verb`, `activity`, `statementId"` and `related_activities` work according to the standard.
+Please not that at the time of writing this functionality is very incomplete, and only the fields `agent`, `verb`, `activity`, `statementId"` and `related_activities` work according to the standard.
 
 
 ```php
