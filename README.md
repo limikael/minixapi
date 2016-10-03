@@ -34,3 +34,54 @@ This shows how to use MiniXapi in the standard way as a REST endpoint. Create an
 ```
 
 This is the basic idea. There are some more things we can do, such as setting up authentication. See the reference for details.
+
+## Usage as a REST endpoint
+
+In order to embed MiniXapi in another web application, it is possible to use it as a library. There are two functions exposed for this purpose, `getStatements` and `putStatement`. The setup, e.g. specifying the database connection, is done in the same way as when we use it as a RESTful endpoint.
+
+The function `putStatement` is used to put a statement into the learning record store. The statement is represented by a PHP array. Even though the statement is an array, rather than JSON as is used by the xAPI standard, all fields used in the standard can be used in the array. 
+
+```php
+<?php
+
+    require_once "<path to MiniXapi>/MiniXapi.php";
+
+    // First we need to create an instance of MiniXapi and set the database
+    // connection details.
+    $miniXapi=new MiniXapi();
+    $miniXapi->setDsn("sqlite:mylrs.sqlite");
+
+    // Our statement.
+    $statement=array(
+        "actor"=>array("mbox"=>"mailto:sally@example.com"),
+        "verb"=>array("id"=>"http://adlnet.gov/expapi/verbs/experienced"),
+        "object"=>array("id"=>"http://example.com/activities/solo-hang-gliding")
+    );
+
+    // Put the statement in the database.
+    $statementId=$miniXapi->putStatement($statement);
+```
+
+The function `getStatements` is used to search for and retreive statements from the record store. This function accepts an array as input, and returns an array of matching statements. The fields of the array corresponds to the fields used when getting statements from an xAPI record store, see the [xAPI standard documentation](https://github.com/adlnet/xAPI-Spec/blob/master/xAPI-Communication.md#213-get-statements) for details.
+
+```php
+<?php
+
+    require_once "<path to MiniXapi>/MiniXapi.php";
+
+    // First we need to create an instance of MiniXapi and set the database
+    // connection details.
+    $miniXapi=new MiniXapi();
+    $miniXapi->setDsn("sqlite:mylrs.sqlite");
+
+    // Retreive all Sallys statements.
+    $statements=$miniXapi->getStatements(array(
+        "agent"=>array("mbox"=>"mailto:sally@example.com")
+    ));
+
+    // Retreive everything Sally has completed.
+    $statements=$miniXapi->getStatements(array(
+        "agent"=>array("mbox"=>"mailto:sally@example.com"),
+        "verb"=>"http://adlnet.gov/expapi/verbs/completed"
+    ));
+```
