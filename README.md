@@ -8,7 +8,7 @@ An embeddable xAPI learning record store.
 
 ## Introduction
 
-MiniXapi is an xAPI LRS. It has no where near full xAPI compliance, it might get there some day, but it is not seen as a goal, it will grow on an need basis. It is common for xAPI record stores to store their data in a NoSQL database, such as MongoDB. MiniXapi stores it's data in a standard PDO relational database. It was designed this way in order to fit into a traditional web applications and environments, such as WordPress. It can expose an xAPI REST endpoint. It can also be used as a library, in order to be embedded into other web applications. MiniXapi is written in PHP.
+MiniXapi is an xAPI learning record store. It is common for xAPI record stores to store their data in a NoSQL database, such as MongoDB. MiniXapi is a bit different since it stores its data in a standard relational database, using the standard PDO class in PHP. It was designed this way in order to fit into a traditional web applications and environments, such as WordPress. It can also be used as a library, in order to be embedded into other web applications. It can also expose an xAPI REST endpoint to be accessed according to the xAPI standard. It has no where near full xAPI compliance, it might get there some day, who knows. However, full compliance is not seen as a goal at the moment, it will grow on a need basis.
 
 ## Usage as a REST endpoint
 
