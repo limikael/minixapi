@@ -32,3 +32,5 @@ This shows how to use MiniXapi in the standard way as a REST endpoint. Create an
     // Serve incoming requests.
     $miniXapi->serve();
 ```
+
+This is the basic idea. There are some more things we can do, such as setting up authentication. See the reference for details.
