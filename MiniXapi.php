@@ -99,8 +99,8 @@ class MiniXapi {
 	/**
 	 * Process the put statements request.
 	 */
-	private function processPostStatements($body) {
-		$statement=TinCan\Statement::fromJSON($body);
+	private function putStatement($data) {
+		$statement=new TinCan\Statement($data);
 		StatementUtil::formalize($statement);
 
 		$statementObject=$statement->asVersion(TinCan\Version::latest());
@@ -292,8 +292,13 @@ class MiniXapi {
 	 * Process a request.
 	 */
 	public function processRequest($method, $url, $query=array(), $body="") {
-		if ($method=="POST" && $url=="statements")
-			return $this->processPostStatements($body);
+		if ($method=="POST" && $url=="statements") {
+			$data=json_decode($body,TRUE);
+			if (!$data)
+				throw new Exception("Unable to parse JSON");
+
+			return $this->putStatement($data);
+		}
 
 		if ($method=="GET" && $url=="statements")
 			return $this->getStatements($query);
