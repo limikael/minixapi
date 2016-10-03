@@ -16,8 +16,10 @@ This shows how to use MiniXapi in the standard way as a REST endpoint. Create an
 
 ```php
 <?php
+
     require_once "<path to MiniXapi>/MiniXapi.php";
 
+    // Create an instance of MiniXapi.
     $miniXapi=new MiniXapi();
 
     // Set the data service name to use.
