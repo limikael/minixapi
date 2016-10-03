@@ -39,6 +39,17 @@ class MiniXapiTest extends PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Test uninstall
+	 */
+	function testUninstall() {
+		$this->assertFalse($this->miniXapi->isInstalled());
+		$this->miniXapi->install();
+		$this->assertTrue($this->miniXapi->isInstalled());
+		$this->miniXapi->uninstall();
+		$this->assertFalse($this->miniXapi->isInstalled());
+	}
+
+	/**
 	 * Test put and get statements.
 	 */
 	function testGetPut() {

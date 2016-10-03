@@ -163,22 +163,29 @@ class MiniXapi {
 			}
 		}
 
-		$q=$pdo->prepare(
+		$qs=
 			"INSERT INTO {$this->tablePrefix}statements_index ".
-			"       (type, value, statementId) ".
-			"VALUES (:type, :value, :statementId)"
-		);
+			"            (type, value, statementId) ".
+			"VALUES ";
 
+		$qa=array();
+		$params=array();
+
+		foreach ($indices as $index) {
+			$qa[]="(?,?,?)";
+			$params[]=$index["type"];
+			$params[]=$index["value"];
+			$params[]=$statement->getId();
+		}
+
+		$qs.=join(",",$qa);
+		$q=$pdo->prepare($qs);
 		if (!$q)
 			throw new DatabaseException($pdo->errorInfo());
 
-		foreach ($indices as $index) {
-			//print_r($index);
-			$index["statementId"]=$statement->getId();
-			$r=$q->execute($index);
-			if (!$r)
-				throw new DatabaseException($q->errorInfo());
-		}
+		$r=$q->execute($params);
+		if (!$r)
+			throw new DatabaseException($q->errorInfo());
 
 		return array($statement->getId());
 	}
@@ -304,32 +311,33 @@ class MiniXapi {
 	 * Get pdo, create if not created already.
 	 */
 	private function getPdo() {
-		if (!$this->pdo)
+		if (!$this->pdo) {
+			if (!$this->dsn)
+				throw new Exception("No DSN or PDO set.");
+
 			$this->pdo=new PDO($this->dsn);
+		}
 
 		return $this->pdo;
 	}
 
 	/**
-	 * Install specified database
+	 * Install database tables.
 	 */
 	public function install() {
 		$pdo=$this->getPdo();
 
-		if (!$pdo)
-			throw new Exception("DSN not set for installation");
-
-		$r=$pdo->query(
+		$r=$pdo->exec(
 			"CREATE TABLE {$this->tablePrefix}statements ( ".
 			"  statementId VARCHAR(255) NOT NULL PRIMARY KEY, ".
 			"  statement TEXT ".
 			")"
 		);
 
-		if (!$r)
+		if ($r===FALSE)
 			throw new DatabaseException($pdo->errorInfo());
 
-		$r=$pdo->query(
+		$r=$pdo->exec(
 			"CREATE TABLE {$this->tablePrefix}statements_index ( ".
 			"  type VARCHAR(20) NOT NULL, ".
 			"  value TEXT NOT NULL, ".
@@ -338,7 +346,28 @@ class MiniXapi {
 			")"
 		);
 
-		if (!$r)
+		if ($r===FALSE)
+			throw new DatabaseException($pdo->errorInfo());
+	}
+
+	/**
+	 * Uninstall database tables.
+	 */
+	public function uninstall() {
+		$pdo=$this->getPdo();
+
+		$r=$pdo->exec(
+			"DROP TABLE {$this->tablePrefix}statements"
+		);
+
+		if ($r===FALSE)
+			throw new DatabaseException($pdo->errorInfo());
+
+		$r=$pdo->exec(
+			"DROP TABLE {$this->tablePrefix}statements_index"
+		);
+
+		if ($r===FALSE)
 			throw new DatabaseException($pdo->errorInfo());
 	}
 }
