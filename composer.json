@@ -1,0 +1,13 @@
+{
+    "name": "limikael/minixapi",
+    "authors": [
+        {
+            "name": "Mikael Lindqvist",
+            "email": "li.mikael@gmail.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+		"apigen/apigen": "4.*"
+	}
+}

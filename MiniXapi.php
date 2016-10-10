@@ -6,7 +6,7 @@ require_once __DIR__."/src/utils/StatementUtil.php";
 require_once __DIR__."/ext/TinCanPHP/autoload.php";
 
 /**
- * MiniXapi
+ * MiniXapi is an embeddable Learning Record Store.
  */
 class MiniXapi {
 
@@ -41,6 +41,7 @@ class MiniXapi {
 
 	/**
 	 * Set a table prefix.
+	 * This function needs to be called before install.
 	 */
 	public function setTablePrefix($tablePrefix) {
 		$this->tablePrefix=$tablePrefix;
@@ -97,9 +98,10 @@ class MiniXapi {
 	}
 
 	/**
-	 * Process the put statements request.
+	 * Put a statement in the xAPI database.
+	 * @return String The id for the inserted statement.
 	 */
-	private function putStatement($data) {
+	public function putStatement($data) {
 		$statement=new TinCan\Statement($data);
 		StatementUtil::formalize($statement);
 
@@ -187,15 +189,13 @@ class MiniXapi {
 		if (!$r)
 			throw new DatabaseException($q->errorInfo());
 
-		return array($statement->getId());
+		return $statement->getId();
 	}
 
 	/**
 	 * Get statements.
-	 * If the query has statementId in it, the single matching
-	 * statement will be returned. For other queries, an array of
-	 * matching statements will be returned. This is similar
-	 * to the xAPI standard.
+	 * Returns an array with matching statements.
+	 * @return Array The statements matching the query.
 	 */
 	public function getStatements($query=array()) {
 		$pdo=$this->getPdo();
@@ -280,12 +280,7 @@ class MiniXapi {
 			$res[]=json_decode($row["statement"],TRUE);
 		}
 
-		if (isset($query["statementId"]))
-			return $res[0];
-
-		return array(
-			"statements"=>$res
-		);
+		return $res;
 	}
 
 	/**
@@ -297,23 +292,45 @@ class MiniXapi {
 			if (!$data)
 				throw new Exception("Unable to parse JSON");
 
-			return $this->putStatement($data);
+			$statementId=$this->putStatement($data);
+			return array($statementId);
 		}
 
-		if ($method=="GET" && $url=="statements")
-			return $this->getStatements($query);
+		if ($method=="GET" && $url=="statements") {
+			$res=$this->getStatements($query);
+
+			if (isset($query["statementId"]))
+				return $res[0];
+
+			return array(
+				"statements"=>$res
+			);
+		}
 
 		else throw new Exception("Unknown method: $method $url");
 	}
 
 	/**
 	 * Set data service name.
+	 * This data service name will be used to create a PDO object for
+	 * connecting to the database. If you would like to reuse an existing
+	 * pdo object, use the setPdo function instead.
+	 * @param String dsn A data service name as accepted by PDO.
 	 */
 	public function setDsn($dsn) {
 		if ($this->pdo)
 			throw new Exception("Can't set DSN, PDO already created");
 
 		$this->dsn=$dsn;
+	}
+
+	/**
+	 * Set pdo (Php Database Object) to use for the connection to the 
+	 * database.
+	 * @param PDO pdo The PDO to use.
+	 */
+	public function setPdo($pdo) {
+		$this->pdo=$pdo;
 	}
 
 	/**

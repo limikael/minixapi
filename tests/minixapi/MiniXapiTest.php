@@ -124,12 +124,12 @@ __END__;
 		);
 
 		foreach ($statements as $statement)
-			$this->miniXapi->processRequest("POST","statements",array(),json_encode($statement));
+			$this->miniXapi->putStatement($statement);
 
-		$res=$this->miniXapi->processRequest("GET","statements",
+		$res=$this->miniXapi->getStatements(
 			array("verb"=>"http://adlnet.gov/expapi/verbs/experienced")
 		);
-		$this->assertCount(4,$res["statements"]);
+		$this->assertCount(4,$res);
 
 		$res=$this->miniXapi->processRequest("GET","statements",
 			array("activity"=>"http://example.com/activities/solo-hang-gliding")
