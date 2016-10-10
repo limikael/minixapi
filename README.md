@@ -33,9 +33,11 @@ This example shows how to use MiniXapi in the standard way as a RESTful endpoint
     $miniXapi->serve();
 ```
 
-This is the basic idea. There are some more things we can do, such as setting up authentication. See the reference for details.
+This is the basic idea. There are some more things we can do, such as setting up authentication. See the [reference](https://limikael.github.io/minixapi/doc/) for details.
 
 ## Usage as a library
+
+[Reference documentation](https://limikael.github.io/minixapi/doc/)
 
 In order to embed MiniXapi into a web application, it is possible to use it as a library. There are two functions exposed for this purpose, `getStatements` and `putStatement`. The setup, e.g. specifying the database connection, is done in the same way as when MiniXapi is used as a RESTful endpoint.
 
