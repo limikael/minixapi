@@ -28,12 +28,12 @@ class MiniXapi {
 	public function isInstalled() {
 		$pdo=$this->getPdo();
 
-		$t=gettype($pdo->exec("SELECT COUNT(*) FROM {$this->tablePrefix}statements"));
-		if ($t!="integer")
+		$t=gettype($pdo->query("SELECT COUNT(*) FROM {$this->tablePrefix}statements"));
+		if ($t!="object")
 			return FALSE;
 
-		$t=gettype($pdo->exec("SELECT COUNT(*) FROM {$this->tablePrefix}statements_index"));
-		if ($t!="integer")
+		$t=gettype($pdo->query("SELECT COUNT(*) FROM {$this->tablePrefix}statements_index"));
+		if ($t!="object")
 			return FALSE;
 
 		return TRUE;
@@ -354,7 +354,7 @@ class MiniXapi {
 		$pdo=$this->getPdo();
 
 		//error_log("creating statements db");
-		$r=$pdo->exec(
+		$r=$pdo->query(
 			"CREATE TABLE {$this->tablePrefix}statements ( ".
 			"  statementId VARCHAR(255) NOT NULL PRIMARY KEY, ".
 			"  statement TEXT ".
@@ -364,12 +364,14 @@ class MiniXapi {
 		if ($r===FALSE)
 			throw new DatabaseException($pdo->errorInfo());
 
+		$r->fetchAll();
+
 		$valueIndexSpec="value";
 		if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)=="mysql")
 			$valueIndexSpec="value(255)";
 
 		//error_log("creating statements_index db");
-		$r=$pdo->exec(
+		$r=$pdo->query(
 			"CREATE TABLE {$this->tablePrefix}statements_index ( ".
 			"  type VARCHAR(20) NOT NULL, ".
 			"  value TEXT NOT NULL, ".
@@ -380,6 +382,8 @@ class MiniXapi {
 
 		if ($r===FALSE)
 			throw new DatabaseException($pdo->errorInfo());
+
+		$r->fetchAll();
 	}
 
 	/**
