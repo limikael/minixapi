@@ -353,6 +353,7 @@ class MiniXapi {
 	public function install() {
 		$pdo=$this->getPdo();
 
+		//error_log("creating statements db");
 		$r=$pdo->exec(
 			"CREATE TABLE {$this->tablePrefix}statements ( ".
 			"  statementId VARCHAR(255) NOT NULL PRIMARY KEY, ".
@@ -363,12 +364,17 @@ class MiniXapi {
 		if ($r===FALSE)
 			throw new DatabaseException($pdo->errorInfo());
 
+		$valueIndexSpec="value";
+		if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)=="mysql")
+			$valueIndexSpec="value(255)";
+
+		//error_log("creating statements_index db");
 		$r=$pdo->exec(
 			"CREATE TABLE {$this->tablePrefix}statements_index ( ".
 			"  type VARCHAR(20) NOT NULL, ".
 			"  value TEXT NOT NULL, ".
 			"  statementId VARCHAR(255) NOT NULL, ".
-			"  PRIMARY KEY (type, value, statementId) ".
+			"  PRIMARY KEY (type, $valueIndexSpec, statementId) ".
 			")"
 		);
 
@@ -383,14 +389,14 @@ class MiniXapi {
 		$pdo=$this->getPdo();
 
 		$r=$pdo->exec(
-			"DROP TABLE {$this->tablePrefix}statements"
+			"DROP TABLE IF EXISTS {$this->tablePrefix}statements"
 		);
 
 		if ($r===FALSE)
 			throw new DatabaseException($pdo->errorInfo());
 
 		$r=$pdo->exec(
-			"DROP TABLE {$this->tablePrefix}statements_index"
+			"DROP TABLE IF EXISTS {$this->tablePrefix}statements_index"
 		);
 
 		if ($r===FALSE)
