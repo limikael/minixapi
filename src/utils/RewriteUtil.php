@@ -66,8 +66,25 @@ class RewriteUtil {
 	 * it would return `and/some/info` since that is the part of the
 	 * url that comes after the location of the script and is probably
 	 * interesting to us as some sort of parameter.
+	 *
+	 * If the url starts with the full script name, assume we are note redirected
+	 * so take what comes after the script instead.
 	 */
 	public static function getPath() {
+		$scriptPart=substr(
+			$_SERVER["REQUEST_URI"],
+			0,
+			strlen($_SERVER["SCRIPT_NAME"])
+		);
+
+		if ($scriptPart==$_SERVER["SCRIPT_NAME"]) {
+			$after=substr($_SERVER["REQUEST_URI"],strlen($_SERVER["SCRIPT_NAME"]));
+			if (strpos($after,"?")!==FALSE)
+				$after=substr($after,0,strpos($after,"?"));
+
+			return $after;
+		}
+
 		$pathinfo=pathinfo($_SERVER["SCRIPT_NAME"]);
 		$dirname=$pathinfo["dirname"];
 		$url=$_SERVER["REQUEST_URI"];
@@ -75,6 +92,7 @@ class RewriteUtil {
 			$url=substr($url,0,strpos($url,"?"));
 		if (substr($url,0,strlen($dirname))!=$dirname)
 			throw new Exception("Somthing is malformed.");
+
 		return substr($url,strlen($dirname));
 	}
 

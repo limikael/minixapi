@@ -8,7 +8,7 @@ link-deps:
 
 docs:
 	git checkout master
-	./vendor/bin/apigen generate -q -d doc -s MiniXapi.php
+	apigen generate -q -d doc -s MiniXapi.php
 	git checkout gh-pages
 	git add doc
 	git commit --allow-empty -m "update doc"
